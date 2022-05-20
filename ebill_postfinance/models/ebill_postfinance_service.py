@@ -1,13 +1,14 @@
 # Copyright 2022 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import csv
 import logging
 import logging.config
 
 # from ..ebilling_postfinance.ebilling_postfinance import ebilling_postfinance
 from ebilling_postfinance import ebilling_postfinance
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
@@ -124,7 +125,19 @@ class EbillPostfinanceService(models.Model):
         res = service.get_process_protocol_list(archive_data)
         return res
 
+    def initiate_ebill_recipient_subscription(self, recipient_email):
+        service = self._get_service()
+        res = service.initiate_ebill_recipient_subscription(recipient_email)
+        # print(res)
+        return res
+
     def get_ebill_recipient_subscription_status(self, recipient_id):
+        r"""Get a payer subscription status
+
+        recipient_id: eBillRecipientID (N17) or
+                      eBillRecipient email address (^\S+@\S+$) or
+                      eBillRecipient UIDHR (CHE[0-9]{9})
+        """
         service = self._get_service()
         res = service.get_ebill_recipient_subscription_status(recipient_id)
         return res
@@ -146,3 +159,27 @@ class EbillPostfinanceService(models.Model):
         services = self.search([])
         for service in services:
             service.search_invoice()
+
+    def _import_subscription_file(self, file_data):
+        reader = csv.reader(file_data, delimiter=";")
+        next(reader)  # Ditch the header
+        for row in reader:
+            self._import_subscription_change(row)
+
+    def _import_subscription_change(self, data):
+        """
+        action: 1=registration, 2=direct regsitration 3=cancelation
+        """
+        action = int(data[0])
+        billerid = data[1]
+        # data[2]
+        if billerid != self.biller_id:
+            raise UserError(
+                _("Error importing postfinance subscription BillerId incoherent")
+            )
+        existing_contract = self.env["ebill.payment.contract"].search(
+            [("postfinance_billerid", "=", billerid)]
+        )
+        if action == 3:
+            existing_contract.write({"state": "cancel"})
+        # print(data)

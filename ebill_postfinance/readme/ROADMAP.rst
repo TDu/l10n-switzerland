@@ -12,11 +12,14 @@ Nice to have
 * Add an action on partner to create a ebilling contract.
 * On contract if invoicing method is set add readonly button.
 
+* Add grouping on service in ebill contract
 
 
-# TO DO
+Test subscription
+-----------------
 
-* Sync record state and api state
+For test@test.ch token is 6d1901b7-f65d-401d-bfac-d26d30fef0f6
+
 
 
 Question for Postfinance

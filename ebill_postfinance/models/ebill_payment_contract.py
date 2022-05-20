@@ -1,4 +1,4 @@
-# Copyright 2019 Camptocamp SA
+# Copyright 2019-2022 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import _, api, fields, models
@@ -8,7 +8,7 @@ from odoo.exceptions import ValidationError
 class EbillPaymentContract(models.Model):
     _inherit = "ebill.payment.contract"
 
-    postfinance_billerid = fields.Char(string="Biller ID", size=20)
+    postfinance_billerid = fields.Char(string="Biller ID", index=True)
     is_postfinance_contract = fields.Boolean(
         compute="_compute_is_postfinance_contract", store=False
     )
@@ -27,6 +27,8 @@ class EbillPaymentContract(models.Model):
         help="Payment type to use for the invoices sent,"
         " PDF will be generated and attached accordingly.",
     )
+    postfinance_status_text = fields.Char(string="Last status")
+    postfinance_init_token = fields.Char(string="Initiation token")
 
     @api.depends("transmit_method_id")
     def _compute_is_postfinance_contract(self):
@@ -49,6 +51,24 @@ class EbillPaymentContract(models.Model):
         for record in self:
             if record.partner_id:
                 record.partner_id.customer_invoice_transmit_method_id = transmit_method
+
+    def check_postfinance_subscription_status(self):
+        self.ensure_one()
+        recipient_id = self.postfinance_billerid or self.partner_id.email
+        res = self.postfinance_service_id.get_ebill_recipient_subscription_status(
+            recipient_id
+        )
+        self.postfinance_status_text = res[0].Message
+        # print(res)
+
+    def initiate_postfinance_subscription(self):
+        self.ensure_one()
+        email = self.partner_id.email
+        res = self.postfinance_service_id.initiate_ebill_recipient_subscription(email)
+        self.postfinance_init_token = res.SubscriptionInitiationToken
+        self.postfinance_status_text = res.Message or _(
+            f"Initiated on {fields.Datetime.now().isoformat()[:10]}"
+        )
 
     @api.constrains("transmit_method_id", "postfinance_billerid")
     def _check_postfinance_biller_id(self):

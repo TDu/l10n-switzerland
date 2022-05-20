@@ -26,11 +26,31 @@
                     <field name="payment_type" />
                     <field name="is_postfinance_contract" invisible="1" />
                     <field name="is_postfinance_method_on_partner" invisible="1" />
+                    <field name="postfinance_status_text" />
+                    <field name="postfinance_init_token" />
                 </group>
             </group>
 
             <group name="main" position="before">
               <div class="oe_button_box" name="button_box">
+                <button
+                        name="check_postfinance_subscription_status"
+                        help=""
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-question-circle-o"
+                        string="Check status"
+                    >
+                </button>
+                <button
+                        name="initiate_postfinance_subscription"
+                        help=""
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-power-off"
+                        string="Initiate"
+                    >
+                </button>
                 <button
                         name="set_postfinance_method_on_partner"
                         help="Sets the invoice transmit method on the customer"
