@@ -120,15 +120,22 @@ class EbillPostfinanceService(models.Model):
         return res
 
     def get_process_protocol_list(self, archive_data=False):
-        # Is this the processing result of an invoice ?
         service = self._get_service()
         res = service.get_process_protocol_list(archive_data)
         return res
 
     def initiate_ebill_recipient_subscription(self, recipient_email):
+        """Initiate subscripiton of eBill recipient.
+
+        recipient_email: email's payer to initiate subscription
+
+        response: {
+            'SubscriptionInitiationToken': Token to use for confirmation,
+            Message: Human readable explanation of problem.
+            }
+        """
         service = self._get_service()
         res = service.initiate_ebill_recipient_subscription(recipient_email)
-        # print(res)
         return res
 
     def get_ebill_recipient_subscription_status(self, recipient_id):
@@ -140,6 +147,18 @@ class EbillPostfinanceService(models.Model):
         """
         service = self._get_service()
         res = service.get_ebill_recipient_subscription_status(recipient_id)
+        return res
+
+    def get_ebill_recipient_subscription_status_bulk(self, recipient_ids):
+        r"""Get a payer subscription status
+
+        recipient_ids: a list of
+                      eBillRecipientID (N17) or
+                      eBillRecipient email address (^\S+@\S+$) or
+                      eBillRecipient UIDHR (CHE[0-9]{9})
+        """
+        service = self._get_service()
+        res = service.get_ebill_recipient_subscription_status_bulk(recipient_ids)
         return res
 
     def get_registration_protocol_list(self, archive_data=False):
@@ -160,26 +179,81 @@ class EbillPostfinanceService(models.Model):
         for service in services:
             service.search_invoice()
 
+    # Related to subscription updates
+
     def _import_subscription_file(self, file_data):
         reader = csv.reader(file_data, delimiter=";")
         next(reader)  # Ditch the header
         for row in reader:
             self._import_subscription_change(row)
+            return  # FIXME for testing only
 
     def _import_subscription_change(self, data):
         """
-        action: 1=registration, 2=direct regsitration 3=cancelation
+        action: 1=registration, 2=direct regsitration, 3=cancelation
         """
         action = int(data[0])
         billerid = data[1]
-        # data[2]
         if billerid != self.biller_id:
             raise UserError(
-                _("Error importing postfinance subscription BillerId incoherent")
+                _(
+                    f"Error importing postfinance subscription unknown biller ID {billerid}"
+                )
             )
+        recipient_id = data[2]
+
         existing_contract = self.env["ebill.payment.contract"].search(
-            [("postfinance_billerid", "=", billerid)]
+            [
+                ("postfinance_billerid", "=", recipient_id),
+                ("postfinance_service_id", "=", self.id),
+            ],
+            limit=1,  # To help for now
         )
         if action == 3:
-            existing_contract.write({"state": "cancel"})
-        # print(data)
+            if existing_contract:
+                existing_contract.state = "cancel"
+            return
+
+        partner_type = data[3]
+        # language = data[4]
+        given_name = data[5]
+        family_name = data[6]
+        company_name = data[7]
+        address = data[8]
+        zip_code = data[9]
+        city = data[10]
+        # country = data[11]
+        email = data[12]
+        # uid = data[13]
+        # credit_account = data[14]
+        # creditor_ref= data[15]
+
+        if not existing_contract:
+            partner = self.env["res.partner"].search([("email", "ilike", email)])
+            if not partner:
+                partner_name = (
+                    company_name
+                    if partner_type == "COMPANY"
+                    else " ".join([given_name, family_name])
+                )
+                partner = self.env["res.partner"].create(
+                    {
+                        "name": partner_name,
+                        "street": address,
+                        "zip": zip_code,
+                        "city": city,
+                        "email": email,
+                        "is_company": partner_type == "COMPANY"
+                        # add the language
+                        # add the country
+                    }
+                )
+
+            self.env["ebill.payment.contract"].create(
+                {
+                    "partner_id": partner.id,
+                    "postfinance_billerid": recipient_id,
+                    "postfinance_service_id": self.id,
+                    # "transmit_method_id":
+                }
+            )

@@ -1,8 +1,12 @@
 # Copyright 2019-2022 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import logging
+
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
+
+_logger = logging.getLogger(__name__)
 
 
 class EbillPaymentContract(models.Model):
@@ -58,22 +62,39 @@ class EbillPaymentContract(models.Model):
         res = self.postfinance_service_id.get_ebill_recipient_subscription_status(
             recipient_id
         )
+        _logger.info(
+            f"Postfinance: subscription_status for {recipient_id} response {res}"
+        )
         self.postfinance_status_text = res[0].Message
-        # print(res)
 
     def initiate_postfinance_subscription(self):
+        """ """
         self.ensure_one()
         email = self.partner_id.email
         res = self.postfinance_service_id.initiate_ebill_recipient_subscription(email)
+        _logger.info(f"Postfinance: initiate_subscription for {email} response {res}")
         self.postfinance_init_token = res.SubscriptionInitiationToken
         self.postfinance_status_text = res.Message or _(
             f"Initiated on {fields.Datetime.now().isoformat()[:10]}"
+        )
+
+    def confirm_ebill_recipient_subscription(self, initiation_token, activation_code):
+        """ """
+        service = self._get_service()
+        res = service.ConfirmEBillRecipientSubscription(
+            self.initiation_token, activation_code
+        )
+        _logger.info(
+            f"""Postfinance: confirm_subscription for {initiation_token} with
+            {activation_code} response {res}"""
         )
 
     @api.constrains("transmit_method_id", "postfinance_billerid")
     def _check_postfinance_biller_id(self):
         for contract in self:
             if not contract.is_postfinance_contract:
+                continue
+            if not contract.is_valid:
                 continue
             if not contract.postfinance_billerid:
                 raise ValidationError(

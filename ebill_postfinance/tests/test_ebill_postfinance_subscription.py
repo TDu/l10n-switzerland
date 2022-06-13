@@ -13,9 +13,16 @@ class TestEbillPostfinanceSubscription(CommonCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.EbillPaymentContract = cls.env["ebill.payment.contract"]
 
     def test_import_subscription_status(self):
         with file_open(
             "ebill_postfinance/tests/examples/subscription_update.csv"
         ) as csvfile:
             self.service._import_subscription_file(csvfile)
+
+        contract = self.EbillPaymentContract.search(
+            [("postfinance_billerid", "=", "41100000000000001")]
+        )
+        self.assertTrue(contract)
+        self.assertEqual(contract.partner_id.email, "hans.muster@mail.ch")
