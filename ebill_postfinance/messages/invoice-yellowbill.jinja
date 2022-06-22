@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Envelope>
+    <Header>
+        <From>{{ invoice.company_id.name }}</From>
+        <To>IPECeBILLServer</To>
+        <UseCase>CreateybInvoice</UseCase>
+        <SessionID>1</SessionID>
+        <Version>2.0</Version>
+        <Status>0</Status>
+        <SoftwareName>Odoo</SoftwareName>
+        <SoftwareVersion>14.0</SoftwareVersion>
+    </Header>
+    <Body>
+        <DeliveryInfo>
+            <BillerID>{{ message.service_id.biller_id }}</BillerID>
+            <eBillAccountID>{{ ebill_account_number }}</eBillAccountID>
+            <DeliveryDate>{{ format_date(invoice.date_invoice) }}</DeliveryDate>
+            <TransactionID>{{ transaction_id }}</TransactionID>
+            <BillDetailsType>PDFAppendix</BillDetailsType>
+            <URLBillDetails/>
+        </DeliveryInfo>
+        <Bill>
+            <Header>
+                <DocumentType>BILL</DocumentType>
+                <DocumentID>{{ invoice.name }}</DocumentID>
+                <DocumentDate>{{ format_date(invoice.date_invoice) }}</DocumentDate>
+                <SenderParty>
+                    <TaxLiability>VAT</TaxLiability>
+                    <PartyType>
+                        <Address>
+                            <CompanyName>{{ biller.name }}</CompanyName>
+                            <Address1>{{ (biller.street or "")|truncate(50, True, "") }}</Address1>
+                            {%- if biller.street2 %}
+                            <Address2>{{ (biller.street2)|truncate(50, True, "") }}</Address2>
+                            {%- endif %}
+                            <ZIP>{{ biller.zip or "" }}</ZIP>
+                            <City>{{ biller.city or "" }}</City>
+                            <Country>{{ biller.country_id.code or 'CH' }}</Country>
+                            {%- if biller.email %}
+                            <Email>{{ biller.email }}</Email>
+                            {%- endif %}
+                            {%- if biller.phone %}
+                            <Contact1>{{ biller.phone }}</Contact1>
+                            {%- endif %}
+                            {%- if biller.mobile %}
+                            <Contact2>{{ biller.mobile }}</Contact2>
+                            {%- endif %}
+                        </Address>
+                        {%- if invoice.company_id.vat %}
+                        <TaxID>{{ invoice.company_id.vat|replace("-", "")|replace(".", "") }}</TaxID>
+                        {%- endif %}
+                    </PartyType>
+                </SenderParty>
+                <ReceiverParty>
+                    <PartyType>
+                        <CustomerID>{{ customer.id }}</CustomerID>
+                        <Address>
+                            <CompanyName>{{ (customer.commercial_company_name or customer.name)|truncate(50, True, "") }}</CompanyName>
+                            <Address1>{{ (customer.street or "")|truncate(50, True, "") }}</Address1>
+                            {%- if customer.street2 %}
+                            <Address2>{{ (customer.street2)|truncate(50, True, "") }}</Address2>
+                            {%- endif %}
+                            <ZIP>{{ customer.zip or "" }}</ZIP>
+                            <City>{{ customer.city or "" }}</City>
+                            <Country>{{ customer.country_id.code or 'CH' }}</Country>
+                            {%- if customer.email %}
+                            <Email>{{ customer.email }}</Email>
+                            {%- endif %}
+                            {%- if customer.phone %}
+                            <Contact1>{{ customer.phone }}</Contact1>
+                            {%- endif %}
+                            {%- if customer.mobile %}
+                            <Contact2>{{ customer.mobile }}</Contact2>
+                            {%- endif %}
+                        </Address>
+                        {# {%- if invoice.company_id.vat %} #}
+                        {# <TaxID>{{ invoice.company_id.vat|replace("-", "")|replace(".", "") }}</TaxID> #}
+                        {# {%- endif %} #}
+                    </PartyType>
+                </ReceiverParty>
+                {%- if False %}
+                {# So is this where the invoice is sent and not who it is for ? #}
+                <InvoiceReceivingParty>
+                    <Address>
+                    </Address>
+                </InvoiceReceivingParty>
+                {%- endif %}
+                {%- if delivery %}
+                <DeliveryPlace>
+                    <Address>
+                        <CompanyName>{{ (delivery.commercial_company_name or delivery.name)|truncate(50, True, "") }}</CompanyName>
+                        <ZIP>{{ delivery.zip or "" }}</ZIP>
+                        <City>{{ delivery.city or "" }}</City>
+                        <Country>{{ delivery.country_id.code or 'CH' }}</Country>
+                        {%- if delivery.email %}
+                        <Email>{{ delivery.email }}</Email>
+                        {%- endif %}
+                        {%- if delivery.phone %}
+                        <Contact1>{{ delivery.phone }}</Contact1>
+                        {%- endif %}
+                        {%- if delivery.mobile %}
+                        <Contact2>{{ delivery.mobile }}</Contact2>
+                        {%- endif %}
+                    </Address>
+                </DeliveryPlace>
+                {%- endif %}
+                <AchievementDate>
+                    {# Not sure what is this ? #}
+                    <StartDateAchievement>{{ format_date(invoice.date_invoice) }}</StartDateAchievement>
+                    <EndDateAchievement>{{ format_date(invoice.date_invoice) }}</EndDateAchievement>
+                </AchievementDate>
+                <Currency>{{ invoice.currency_id.name }}</Currency>
+                {# Lets add this on each line #}
+                {# <AccountAssignment> #}
+                {#     <OrderReference> #}
+                {#         <ReferencePosition>0020</ReferencePosition> #}
+                {#         <ReferenceType>OrderReference</ReferenceType> #}
+                {#         <ReferenceValue>1000</ReferenceValue> #}
+                {#     </OrderReference> #}
+                {#     <ProjectNumber>PRCDE6</ProjectNumber> #}
+                {# </AccountAssignment> #}
+                <Language>{{ (customer.lang or "en")|truncate(2, True, "") }}</Language>
+                <PaymentInformation>
+                    <PaymentDueDate>{{ date_due }}</PaymentDueDate>
+                    {# the payment_type on message should be changed for yb #}
+                    <PaymentType>{{ 'ESR' if payment_type == 'isr' else "IBAN"|upper }}</PaymentType>
+                    <fixAmount>Yes</fixAmount>
+                    <IBAN>
+                        <IBAN>{{ bank_account }}</IBAN>
+                        {# <BIC>{{ bank.bank_id.clearing }}</BIC> #}
+                        {# <CreditorReference>123456789111315171921232527</CreditorReference> #}
+                    </IBAN>
+                </PaymentInformation>
+            </Header>
+            <LineItems>
+            {% for line in invoice_lines %}
+                <LineItem>
+                    {# discount, shipping and rounding go here too #}
+                    <LineItemType>NORMAL</LineItemType>
+                    <LineItemID>{{ loop.index }}</LineItemID>
+                    <ProductDescription>{{ (line.product_id.name or line.name or "")[:255] }}</ProductDescription>
+                    <Quantity>{{ line.quantity or 0 }}</Quantity>
+                    <QuantityDescription>{{ line.product_uom_id.name or "PCE"}}</QuantityDescription>
+                    {%- if line.product_id %}
+                    <ProductID>{{ line.product_id.default_code or ''}}</ProductID>
+                    {%- endif %}
+                    <PriceUnit>1</PriceUnit>
+                    <PriceExclusiveTax>{{ line.price_subtotal|round(6) }}</PriceExclusiveTax>
+                    <PriceInclusiveTax>{{ line.price_total|round(6) }}</PriceInclusiveTax>
+                    {% for tax in line.tax_ids %}
+                    {%- if loop.index == 1 %}
+                    <Tax>
+                        <TaxDetail>
+                            <Rate>{{ tax.amount|round(2) }}</Rate>
+                            <Amount>{{ tax._compute_amount(line.price_subtotal, line.price_unit)|round(2) }}</Amount>
+                            <BaseAmountExclusiveTax>{{ line.price_subtotal|round(6) }}</BaseAmountExclusiveTax>
+                            <BaseAmountInclusiveTax>{{ line.price_total|round(6) }}</BaseAmountInclusiveTax>
+                        </TaxDetail>
+                        <TotalTax>{{ tax._compute_amount(line.price_subtotal, line.price_unit)|round(2) }}</TotalTax>
+                    </Tax>
+                    {%- endif %}
+                    {% endfor %}
+                    <AmountExclusiveTax>{{ line.price_subtotal|round(6) }}</AmountExclusiveTax>
+                    <AmountInclusiveTax>{{ line.price_total|round(6) }}</AmountInclusiveTax>
+                </LineItem>
+            {% endfor %}
+            </LineItems>
+            <Summary>
+                {% if amount_by_group %}
+                <Tax>
+                    {% for taxgroup in amount_by_group %}
+                    <TaxDetail>
+                        <Rate>{{ taxgroup[0] or "0" }}</Rate>
+                        <Amount>{{ taxgroup[1]|round(2)|round(6) }}</Amount>
+                        <BaseAmountExclusiveTax>{{ taxgroup[2]|round(6) }}</BaseAmountExclusiveTax>
+                        <BaseAmountInclusiveTax>{{ taxgroup[2]|round(6) + taxgroup[1]|round(6) }}</BaseAmountInclusiveTax>
+                    </TaxDetail>
+                    {% endfor %}
+                    <TotalTax>{{ invoice.amount_tax|round(6) }}</TotalTax>
+                </Tax>
+                {% endif -%}
+                {# <Discount> #}
+                {#     <Days></Days> #}
+                {#     <Rate></Rate> #}
+                {# </Discount> #}
+                <TotalAmountExclusiveTax>{{ invoice.amount_untaxed }}</TotalAmountExclusiveTax>
+                <TotalAmountInclusiveTax>{{ invoice.amount_total }}</TotalAmountInclusiveTax>
+                {# <TotalAmountPaid></TotalAmountPaid> #}
+                {# <TotalAmountDue></TotalAmountDue> #}
+            </Summary>
+        </Bill>
+        <Appendix>
+        <Document MimeType="x-application/pdfappendix">{{- pdf_data | safe -}}</Document>
+        </Appendix>
+    </Body>
+</Envelope>

@@ -32,6 +32,8 @@ class CommonCase(SavepointCase):
         cls.company.zip = "1015"
         cls.company.city = "Lausanne"
         cls.company.partner_id.country_id = cls.country
+        cls.company.email = "info@camptocamp.com"
+        cls.company.phone = ""
         cls.bank = cls.env.ref("base.res_bank_1")
         cls.bank.clearing = 777
         cls.tax7 = cls.env["account.tax"].create(
