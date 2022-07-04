@@ -161,24 +161,34 @@
                     <AmountInclusiveTax>{{ line.price_total|round(6) }}</AmountInclusiveTax>
                     <AmountExclusiveTax>{{ line.price_subtotal|round(6) }}</AmountExclusiveTax>
 
-                    {% set ref_position = 0 %}
+                    {% set ref = namespace(position = 0) %}
                     {% for order in invoice_lines.sale_line_ids.mapped('order_id') %}
-                    {% set ref_position = ref_position + 1 %}
+                    {% set ref.position = ref.position + 1 %}
                     <FixedReference>
-                      <ReferencePosition>{{ ref_position }}</ReferencePosition>
+                      <ReferencePosition>{{ ref.position }}</ReferencePosition>
                       <ReferenceType>OrderNumberBySupplier</ReferenceType>
                       <ReferenceValue>{{ order.name }}</ReferenceValue>
                     </FixedReference>
                     {%- if order.postfinance_ebill_client_order_ref %}
-                    {% set ref_position = ref_position + 1 %}
+                    {% set ref.position = ref.position + 1 %}
                     <FixedReference>
-                        <ReferencePosition>{{ ref_position }}</ReferencePosition>
+                        <ReferencePosition>{{ ref.position }}</ReferencePosition>
                         <ReferenceType>OrderNumberByBuyer</ReferenceType>
                         <ReferenceValue>{{ order.postfinance_ebill_client_order_ref }}</ReferenceValue>
                     </FixedReference>
                     {%- endif %}
                     {% endfor %}
 
+                    {% for picking in line.sale_line_ids.move_ids.mapped('picking_id') %}
+                    {%- if picking.state != 'cancel' %}
+                    {% set ref.position = ref.position + 1 %}
+                    <FixedReference>
+                      <ReferencePosition>{{ ref.position }}</ReferencePosition>
+                      <ReferenceType>DeliveryNoteNumber</ReferenceType>
+                      <ReferenceValue>{{ picking.name }}</ReferenceValue>
+                    </FixedReference>
+                    {%- endif %}
+                    {% endfor %}
                 </LineItem>
             {% endfor %}
             </LineItems>

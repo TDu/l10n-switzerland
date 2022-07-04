@@ -116,6 +116,11 @@
                         <ReferenceType>OrderNumberByBuyer</ReferenceType>
                         <ReferenceValue>CustomerRef</ReferenceValue>
                     </FixedReference>
+                    <FixedReference>
+                        <ReferencePosition>3</ReferencePosition>
+                        <ReferenceType>DeliveryNoteNumber</ReferenceType>
+                        <ReferenceValue>Picking Name</ReferenceValue>
+                    </FixedReference>
                 </LineItem>
                 <LineItem>
                     <LineItemType>NORMAL</LineItemType>
@@ -145,6 +150,11 @@
                         <ReferencePosition>2</ReferencePosition>
                         <ReferenceType>OrderNumberByBuyer</ReferenceType>
                         <ReferenceValue>CustomerRef</ReferenceValue>
+                    </FixedReference>
+                    <FixedReference>
+                        <ReferencePosition>3</ReferencePosition>
+                        <ReferenceType>DeliveryNoteNumber</ReferenceType>
+                        <ReferenceValue>Picking Name</ReferenceValue>
                     </FixedReference>
                 </LineItem>
                 <LineItem>
