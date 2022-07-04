@@ -5,11 +5,12 @@ import os
 from os.path import dirname, join
 
 from vcr import VCR
+from xmlunittest import XmlTestMixin
 
 from odoo.tests.common import SavepointCase
 
 
-class CommonCase(SavepointCase):
+class CommonCase(SavepointCase, XmlTestMixin):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

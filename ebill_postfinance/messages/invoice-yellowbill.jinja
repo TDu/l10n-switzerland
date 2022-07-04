@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Envelope>
+<Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" type="string">
     <Header>
         <From>{{ invoice.company_id.name }}</From>
         <To>IPECeBILLServer</To>
@@ -139,14 +139,12 @@
                     <LineItemType>NORMAL</LineItemType>
                     <LineItemID>{{ loop.index }}</LineItemID>
                     <ProductDescription>{{ (line.product_id.name or line.name or "")[:255] }}</ProductDescription>
-                    <Quantity>{{ line.quantity or 0 }}</Quantity>
-                    <QuantityDescription>{{ line.product_uom_id.name or "PCE"}}</QuantityDescription>
                     {%- if line.product_id %}
                     <ProductID>{{ line.product_id.default_code or ''}}</ProductID>
                     {%- endif %}
+                    <Quantity>{{ line.quantity or 0 }}</Quantity>
+                    <QuantityDescription>{{ line.product_uom_id.name or "PCE"}}</QuantityDescription>
                     <PriceUnit>1</PriceUnit>
-                    <PriceExclusiveTax>{{ line.price_subtotal|round(6) }}</PriceExclusiveTax>
-                    <PriceInclusiveTax>{{ line.price_total|round(6) }}</PriceInclusiveTax>
                     {% for tax in line.tax_ids %}
                     {%- if loop.index == 1 %}
                     <Tax>
@@ -160,8 +158,8 @@
                     </Tax>
                     {%- endif %}
                     {% endfor %}
-                    <AmountExclusiveTax>{{ line.price_subtotal|round(6) }}</AmountExclusiveTax>
                     <AmountInclusiveTax>{{ line.price_total|round(6) }}</AmountInclusiveTax>
+                    <AmountExclusiveTax>{{ line.price_subtotal|round(6) }}</AmountExclusiveTax>
                 </LineItem>
             {% endfor %}
             </LineItems>

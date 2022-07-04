@@ -1,10 +1,13 @@
 # Copyright 2022 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
+import os
 from string import Template
 
 from freezegun import freeze_time
+from lxml import etree as ET
 
+from odoo.modules.module import get_module_root
 from odoo.tools import file_open
 
 from .common import CommonCase
@@ -15,6 +18,10 @@ class TestEbillPostfinanceMessageYB(CommonCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.schema_file = (
+            get_module_root(os.path.dirname(__file__))
+            + "/messages/ybInvoice_V2.0.4.xsd"
+        )
 
     def test_invoice_qr(self):
         """Check XML payload genetated for an invoice."""
@@ -23,7 +30,10 @@ class TestEbillPostfinanceMessageYB(CommonCase):
         message = self.invoice.create_postfinance_ebill()
         message.set_transaction_id()
         message.payload = message._generate_payload_yb()
-        # Remove the PDF file data from the XML to ease testing
+        # Validate the xml generated on top of the xsd schema
+        node = ET.fromstring(message.payload.encode("utf-8"))
+        self.assertXmlValidXSchema(node, xschema=None, filename=self.schema_file)
+        # Remove the PDF file data from the XML to ease diff check
         lines = message.payload.splitlines()
         for pos, line in enumerate(lines):
             if line.find("MimeType") != -1:
@@ -34,11 +44,9 @@ class TestEbillPostfinanceMessageYB(CommonCase):
         expected_tmpl = Template(
             file_open("ebill_postfinance/tests/examples/invoice_qr_yb.xml").read()
         )
-
         expected = expected_tmpl.substitute(
             TRANSACTION_ID=message.transaction_id, CUSTOMER_ID=self.customer.id
         ).encode("utf8")
-
         # Remove the comments in the expected xml
         expected_nocomment = [
             line

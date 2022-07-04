@@ -318,12 +318,12 @@ class EbillPostfinanceInvoiceMessage(models.Model):
     def _get_template_yb(self, jinja_env):
         return jinja_env.get_template(INVOICE_TEMPLATE_YB)
 
-    def _genereate_payload(self):
+    def _generate_payload(self):
         self.ensure_one()
         assert self.state in ("draft", "error")
-        if self.service_id.file_to_use == "XML":
-            if self.use_file_type_xml_paynet:
-                return self._genereate_payload()
+        if self.service_id.file_type_to_use == "XML":
+            if self.service_id.use_file_type_xml_paynet:
+                return self._generate_payload_paynet()
             else:
                 return self._generate_payload_yb()
         return
