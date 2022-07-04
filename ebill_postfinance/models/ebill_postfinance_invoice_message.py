@@ -7,8 +7,10 @@ from datetime import datetime
 
 import pytz
 from jinja2 import Environment, FileSystemLoader
+from lxml import etree
 
 from odoo import _, fields, models
+from odoo.exceptions import UserError
 from odoo.modules.module import get_module_root
 
 from odoo.addons.base.models.res_bank import sanitize_account_number
@@ -19,6 +21,7 @@ MODULE_PATH = get_module_root(os.path.dirname(__file__))
 INVOICE_TEMPLATE_2003 = "invoice-2003A.jinja"
 INVOICE_TEMPLATE_YB = "invoice-yellowbill.jinja"
 TEMPLATE_DIR = [MODULE_PATH + "/messages"]
+XML_SCHEMA_YB = MODULE_PATH + "/messages/ybInvoice_V2.0.4.xsd"
 
 DOCUMENT_TYPE = {"out_invoice": "EFD", "out_refund": "EGS"}
 
@@ -341,6 +344,23 @@ class EbillPostfinanceInvoiceMessage(models.Model):
         jinja_env = self._get_jinja_env(TEMPLATE_DIR)
         jinja_template = self._get_template_yb(jinja_env)
         return jinja_template.render(params)
+
+    def validate_xml_payload(self):
+        """Check the validity of yellowbill xml."""
+        schema = etree.XMLSchema(file=XML_SCHEMA_YB)
+        parser = etree.XMLParser(schema=schema)
+        try:
+            etree.fromstring(self.payload.encode("utf-8"), parser)
+        except etree.XMLSyntaxError as ex:
+            raise UserError(ex.error_log)
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("The payload is valid."),
+                "sticky": False,
+            },
+        }
 
     def update_invoice_status(self):
         """Update the export status in the chatter."""
