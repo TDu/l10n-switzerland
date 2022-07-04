@@ -74,11 +74,6 @@
                 <!--    </OrderReference> -->
                 <!--    <ProjectNumber>PRCDE6</ProjectNumber> -->
                 <!-- </AccountAssignment> -->
-                <!-- <FixedReference> -->
-                <!--    <ReferencePosition>0030</ReferencePosition> -->
-                <!--    <ReferenceType>ContractNumber</ReferenceType> -->
-                <!--    <ReferenceValue>CNT200</ReferenceValue> -->
-                <!-- </FixedReference> -->
                 <Language>en</Language>
                 <PaymentInformation>
                     <PaymentDueDate>2019-07-01</PaymentDueDate>
@@ -111,6 +106,16 @@
                     </Tax>
                     <AmountInclusiveTax>529.88</AmountInclusiveTax>
                     <AmountExclusiveTax>492.0</AmountExclusiveTax>
+                    <FixedReference>
+                        <ReferencePosition>1</ReferencePosition>
+                        <ReferenceType>OrderNumberBySupplier</ReferenceType>
+                        <ReferenceValue>Order123</ReferenceValue>
+                    </FixedReference>
+                    <FixedReference>
+                        <ReferencePosition>2</ReferencePosition>
+                        <ReferenceType>OrderNumberByBuyer</ReferenceType>
+                        <ReferenceValue>CustomerRef</ReferenceValue>
+                    </FixedReference>
                 </LineItem>
                 <LineItem>
                     <LineItemType>NORMAL</LineItemType>
@@ -131,6 +136,16 @@
                     </Tax>
                     <AmountInclusiveTax>0.0</AmountInclusiveTax>
                     <AmountExclusiveTax>0.0</AmountExclusiveTax>
+                    <FixedReference>
+                        <ReferencePosition>1</ReferencePosition>
+                        <ReferenceType>OrderNumberBySupplier</ReferenceType>
+                        <ReferenceValue>Order123</ReferenceValue>
+                    </FixedReference>
+                    <FixedReference>
+                        <ReferencePosition>2</ReferencePosition>
+                        <ReferenceType>OrderNumberByBuyer</ReferenceType>
+                        <ReferenceValue>CustomerRef</ReferenceValue>
+                    </FixedReference>
                 </LineItem>
                 <LineItem>
                     <LineItemType>NORMAL</LineItemType>
@@ -141,6 +156,16 @@
                     <PriceUnit>1</PriceUnit>
                     <AmountInclusiveTax>0.0</AmountInclusiveTax>
                     <AmountExclusiveTax>0.0</AmountExclusiveTax>
+                    <FixedReference>
+                        <ReferencePosition>1</ReferencePosition>
+                        <ReferenceType>OrderNumberBySupplier</ReferenceType>
+                        <ReferenceValue>Order123</ReferenceValue>
+                    </FixedReference>
+                    <FixedReference>
+                        <ReferencePosition>2</ReferencePosition>
+                        <ReferenceType>OrderNumberByBuyer</ReferenceType>
+                        <ReferenceValue>CustomerRef</ReferenceValue>
+                    </FixedReference>
                 </LineItem>
             </LineItems>
             <Summary>
